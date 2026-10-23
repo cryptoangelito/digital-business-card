@@ -4,6 +4,10 @@
 
 Исходный код: https://github.com/cryptoangelito/digital-business-card
 
+Рабочий HTTPS API и Apollo Sandbox: https://digital-business-card-h6di.onrender.com/graphql
+
+Развёрнуто на Render (free web service + PostgreSQL 16). Бесплатная БД имеет срок действия до **23 ноября 2026, 01:50 по Москве**. Перед этой датой требуется сохранить данные или согласовать переход на другой тариф. Бесплатный web service может засыпать; первый запрос после простоя требует времени на запуск.
+
 ## Быстрый запуск
 
 Требуются Docker Engine / Docker Desktop и Docker Compose. Локальные Node.js и PostgreSQL не нужны.
@@ -180,7 +184,7 @@ npm run start:dev
 
 ## Развёртывание на Render
 
-В репозитории подготовлен `render.yaml`: Docker web service, PostgreSQL, ссылка на `DATABASE_URL` и healthcheck `/health`. Ресурсы ещё не созданы автоматически. Перед созданием проверьте доступность free-планов, сроки хранения БД, ограничения и актуальные условия в [документации Render](https://render.com/docs/free). Платный план выбирается только с разрешения владельца.
+В репозитории подготовлен `render.yaml`: Docker web service, PostgreSQL, ссылка на `DATABASE_URL` и healthcheck `/health`. Этот экземпляр опубликован через официальный Render CLI; Blueprint прошёл серверную валидацию и предназначен для воспроизведения инфраструктуры. Перед созданием проверьте доступность free-планов, сроки хранения БД, ограничения и актуальные условия в [документации Render](https://render.com/docs/free). Платный план выбирается только с разрешения владельца.
 
 1. Войти в Render и подключить GitHub-репозиторий.
 2. Создать Blueprint из `render.yaml`, проверить оба плана и итоговую стоимость до подтверждения.

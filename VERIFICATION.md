@@ -20,7 +20,12 @@
 | Docker Compose на пустом volume | Автоматически применены обе миграции и seed, API healthy |
 | Перезапуск API и PostgreSQL | Контейнеры healthy; повторный smoke успешен |
 | Логи рабочего API | Ошибок запуска/запросов не обнаружено |
-| Публичный облачный endpoint | Пока не опубликован: необходим вход в Render |
+| Публичный облачный endpoint | HTTPS /health → status=ok; запрос работодателя выполнен без GraphQL errors |
+| GitHub Actions | Успешный прогон на чистом hosted runner |
+| Prisma validate / migrate diff | Schema валидна; расхождений между миграциями и PostgreSQL нет |
+| Render Blueprint | Серверная валидация: valid=true |
+| Облачные миграции и seed | Обе миграции и seed выполнены автоматически, статус сервиса live |
+| Публичный smoke после команды Render restart | Успешен: 7 навыков, 0 записей опыта, 2 проекта |
 
 ## Команды, выполненные при проверке
 
@@ -49,4 +54,4 @@ docker compose -p business-card-verification up --build -d --wait
 - При тесте уникальности PostgreSQL намеренно логирует duplicate key: это ожидаемая проверка ограничения, не ошибка рабочего API.
 - Успешный npm audit означает отсутствие известных registry-уязвимостей на момент проверки, а не гарантию отсутствия любых дефектов.
 
-Облачный URL, HTTPS, визуальную работу Sandbox и запрос после публикации необходимо проверить после авторизации Render. Платные ресурсы не создавались.
+Публичный GraphQL: https://digital-business-card-h6di.onrender.com/graphql. HTTPS-запрос профиля и HTML Apollo (HTTP 200) проверены. Визуальная работа embedded Sandbox не проверена: подключённый браузер недоступен. Платные ресурсы не создавались. Render сообщает срок действия free PostgreSQL до 23 ноября 2026, 01:50 по Москве.
