@@ -1,0 +1,24 @@
+query DigitalBusinessCard {
+  profile {
+    name
+    description
+    githubUrl
+    linkedinUrl
+    websiteUrl
+    skills {
+      name
+      category
+    }
+    experience {
+      company
+      position
+      period
+      achievements
+    }
+    projects {
+      name
+      description
+      url
+    }
+  }
+}

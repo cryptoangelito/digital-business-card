@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id          Int          @id @default(autoincrement())
+  slug        String       @unique
+  name        String
+  description String
+  githubUrl   String?
+  linkedinUrl String?
+  websiteUrl  String?
+  skills      Skill[]
+  experience  Experience[]
+  projects    Project[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Skill {
+  id        Int      @id @default(autoincrement())
+  name      String
+  category  String?
+  profileId Int
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, name])
+  @@index([profileId])
+}
+
+model Experience {
+  id           Int      @id @default(autoincrement())
+  company      String
+  position     String
+  period       String
+  achievements String[] @default([])
+  sortOrder    Int      @default(0)
+  profileId    Int
+  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, sortOrder])
+}
+
+model Project {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  url         String
+  sortOrder   Int     @default(0)
+  profileId   Int
+  profile     Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, sortOrder])
+}
