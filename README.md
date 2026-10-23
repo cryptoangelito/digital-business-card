@@ -1,32 +1,36 @@
 # Digital Business Card
 
-Публичное API цифровой визитки Бахвалова Михаила Алексеевича — начинающего backend-разработчика. Возвращает профиль, навыки, опыт и проекты одним GraphQL-запросом. Это учебное задание с воспроизводимым запуском и проверками на настоящей PostgreSQL.
+API цифровой визитки на NestJS и GraphQL. Предоставляет профиль, навыки, опыт и проекты; данные хранятся в PostgreSQL.
 
-Исходный код: https://github.com/cryptoangelito/digital-business-card
+- [Публичный GraphQL API и Apollo Sandbox](https://digital-business-card-h6di.onrender.com/graphql)
+- [Проверка готовности сервиса](https://digital-business-card-h6di.onrender.com/health)
+- [GitHub Actions](https://github.com/cryptoangelito/digital-business-card/actions)
 
-Рабочий HTTPS API и Apollo Sandbox: https://digital-business-card-h6di.onrender.com/graphql
+## Технологии
 
-Развёрнуто на Render (free web service + PostgreSQL 16). Бесплатная БД имеет срок действия до **23 ноября 2026, 01:50 по Москве**. Перед этой датой требуется сохранить данные или согласовать переход на другой тариф. Бесплатный web service может засыпать; первый запрос после простоя требует времени на запуск.
+Node.js 22, TypeScript 5, NestJS 11, Apollo Server 5, GraphQL 16, Prisma 6, PostgreSQL 16, Docker Compose, Jest. Версии зависимостей зафиксированы в `package-lock.json`; установка выполняется через `npm ci`.
 
-## Быстрый запуск
+## Запуск через Docker
 
-Требуются Docker Engine / Docker Desktop и Docker Compose. Локальные Node.js и PostgreSQL не нужны.
+Требуются Docker и Docker Compose. Устанавливать Node.js и PostgreSQL на хост не нужно.
 
 ```bash
 docker compose up --build -d --wait
 ```
 
-- Apollo Sandbox и API: http://localhost:3000/graphql
-- Готовность приложения и соединения с БД: http://localhost:3000/health
-- Логи: `docker compose logs -f api`
-- Остановка с сохранением данных: `docker compose down`
-- Удаление данных: `docker compose down -v` — команда необратимо удаляет БД.
+Apollo Sandbox доступен по адресу http://localhost:3000/graphql, проверка готовности — http://localhost:3000/health.
 
-Если порт занят, задайте `API_PORT=3001` перед запуском (PowerShell: `$env:API_PORT="3001"`). PostgreSQL доступна только внутри сети Compose; порт БД на хост не публикуется. Учётные данные `portfolio` в Compose и `.env.example` — открытые параметры исключительно локальной среды, не production-секреты.
+```bash
+docker compose logs -f api                  # логи приложения
+docker compose exec api node scripts/smoke.mjs  # проверка API
+docker compose down                         # остановка с сохранением данных
+```
 
-## GraphQL
+Если порт занят, задайте переменную `API_PORT`, например в PowerShell: `$env:API_PORT="3001"`.
 
-Откройте `/graphql` в браузере. Apollo Sandbox включён и в production: это намеренное решение для демонстрации публичного read-only API. Introspection доступна. Для загрузки интерфейса Sandbox требуется доступ браузера к ресурсам Apollo.
+PostgreSQL доступна внутри сети Compose без публикации порта на хост. Параметры подключения из Compose предназначены для локальной разработки. Данные сохраняются в именованном volume. Команда `docker compose down -v` удаляет базу.
+
+## Пример GraphQL-запроса
 
 ```graphql
 query {
@@ -40,137 +44,96 @@ query {
 }
 ```
 
-Расширенный пример — `graphql/example.graphql`. Также доступны `githubUrl`, `linkedinUrl`, `websiteUrl`, категории навыков, периоды и достижения опыта, описания и URL проектов. Неизвестные ссылки возвращаются как `null`, отсутствие подтверждённого опыта — как `[]`. Если профиль не создан, `profile` возвращает `null`.
+Расширенный пример находится в [`graphql/example.graphql`](graphql/example.graphql). API также возвращает категории навыков, периоды и достижения опыта, описания и ссылки проектов. Необязательные ссылки имеют значение `null`, пустые коллекции — `[]`. Если профиль отсутствует, запрос возвращает `profile: null`.
 
-Пример с фрагментами, alias и директивой:
+API доступен только для чтения. Apollo Sandbox и introspection включены для работы с публичной схемой.
 
-```graphql
-query Card($withProjects: Boolean!) {
-  profile {
-    name
-    technologies: skills { name category }
-    ...Portfolio
-  }
-}
-fragment Portfolio on Profile {
-  projects @include(if: $withProjects) { name description url }
-}
-```
-
-Переменные: `{ "withProjects": true }`.
-
-HTTP-запрос:
-
-```bash
-curl http://localhost:3000/graphql -H "Content-Type: application/json" --data '{"query":"{ profile { name skills { name } projects { name } } }"}'
-```
-
-## Технологии и структура
-
-Node.js 22, TypeScript 5, NestJS 11, Apollo Server 5, GraphQL 16, Prisma 6, PostgreSQL 16, Docker Compose, Jest. Точные версии и целостность npm-пакетов зафиксированы в `package-lock.json`; сборка использует `npm ci`.
+## Структура проекта
 
 ```text
 src/
-  main.ts                       запуск, PORT, завершение по сигналам
-  app.module.ts                 композиция модулей, GraphQL и Sandbox
-  health.controller.ts          readiness с проверкой PostgreSQL
+  main.ts                       запуск HTTP-сервера и обработка сигналов
+  app.module.ts                 композиция модулей и настройка GraphQL
+  health.controller.ts          проверка соединения с PostgreSQL
   database/                     Prisma provider и lifecycle соединения
   profile/
-    profile.module.ts           feature module
-    profile.resolver.ts         GraphQL → сервис
-    profile.service.ts          выборка профиля и связанных коллекций
-    selection.ts                выбор связей по GraphQL AST
-    models/                     внешний GraphQL-контракт
+    profile.module.ts           модуль профиля
+    profile.resolver.ts         GraphQL-резолвер
+    profile.service.ts          получение профиля и связанных данных
+    selection.ts                определение запрошенных связей по GraphQL AST
+    models/                     GraphQL-модели
     *.spec.ts                   unit-тесты
-    *.e2e-spec.ts               HTTP GraphQL + настоящая PostgreSQL
+    *.e2e-spec.ts               интеграционные тесты GraphQL и PostgreSQL
 prisma/
-  schema.prisma                 реляционная модель
-  migrations/                   версионированный SQL
-  profile-data.json             публичные данные профиля
-  seed.js                       атомарная повторяемая инициализация
-scripts/smoke.mjs                проверка запущенного API
-.github/workflows/ci.yml         проверки в GitHub Actions
-Dockerfile                      стадии build, test, production
-docker-compose.test.yml         изолированная тестовая БД
-render.yaml                     подготовленный Blueprint для Render
+  schema.prisma                 модель базы данных
+  migrations/                   SQL-миграции
+  profile-data.json             данные профиля
+  seed.js                       повторяемая инициализация данных
+scripts/smoke.mjs               проверка работающего API
+.github/workflows/ci.yml        непрерывная интеграция
+Dockerfile                     сборка, тестовый и production-образы
+docker-compose.yml             локальный запуск приложения и PostgreSQL
+docker-compose.test.yml        отдельная среда тестирования
+render.yaml                    инфраструктура Render
 ```
 
 ## Архитектура
 
-`ProfileModule` объединяет функциональность визитки. Резолвер принимает GraphQL-запрос и определяет необходимые связи; сервис формирует Prisma-запрос. `DatabaseModule` экспортирует единственный DI provider Prisma и управляет подключением/отключением. GraphQL-модели отделяют внешний контракт от схемы хранения. Code-first схема строится из TypeScript-декораторов в памяти.
+`ProfileModule` объединяет функциональность визитки. Резолвер обрабатывает GraphQL-запрос и передаёт выбор связей сервису. `ProfileService` формирует типизированный Prisma-запрос. `DatabaseModule` предоставляет единственный экземпляр Prisma и управляет его подключением и отключением через lifecycle hooks NestJS.
 
-API содержит один публичный профиль со стабильным `slug=main`. Мутаций нет: содержимое управляется версионированным файлом данных. Поэтому публичная авторизация и административный интерфейс не требуются. Добавление изменяемых пользователями данных потребует отдельного защищённого сценария и изменения политики seed.
+GraphQL-модели отделяют внешний контракт от схемы хранения. Схема GraphQL создаётся из TypeScript-декораторов по подходу code-first. Единственный публичный профиль определяется по стабильному `slug=main`; его содержимое управляется файлом `prisma/profile-data.json`.
 
-### Загрузка связей без N+1
+### Оптимизация запросов
 
-`requestedRelations` обходит поля запроса, inline и named fragments. Учитывает aliases, `@skip`, `@include` и переменные. Сервис добавляет в Prisma `include` только выбранные связи. Для запроса имени выполняется один SQL-запрос; для всех коллекций — не более четырёх: профиль и по одному на каждую связь. Количество запросов не растёт с количеством строк в коллекции. Это проверяет интеграционный тест с событиями SQL Prisma.
+`requestedRelations` анализирует GraphQL AST, учитывая aliases, inline и named fragments, директивы `@skip` и `@include`, а также переменные. В Prisma `include` попадают только запрошенные связи.
 
-Отдельного `@ResolveField` с запросом на каждый элемент нет. DataLoader для одного корневого профиля не нужен. При добавлении списка профилей необходимо заново измерить SQL-поведение и рассмотреть батчинг или стратегию join. Scalar-поля внутри выбранной таблицы загружаются полностью: для небольшой визитки это приемлемый компромисс.
+Для запроса простых полей выполняется один SQL-запрос. Для профиля со всеми коллекциями — не более четырёх: профиль и по одному запросу на каждую связь. Количество запросов не растёт с числом элементов коллекций. Это проверяется интеграционным тестом через события SQL Prisma. Отдельные запросы из резолвера для каждого элемента не выполняются, что предотвращает N+1.
 
-### PostgreSQL и seed
+Для одного корневого профиля DataLoader не требуется. При расширении API до списка профилей стратегию загрузки следует пересмотреть. Scalar-поля выбранных таблиц загружаются полностью.
 
-`Profile` связан отношениями один-ко-многим с `Skill`, `Experience`, `Project`. В SQL есть внешние ключи, каскадное удаление, уникальность `slug`, уникальность навыка в профиле и индексы для выборки/сортировки связей. Вторая миграция делает URL проекта необязательным: отсутствие публичной ссылки не заменяется вымышленным адресом.
+### База данных и инициализация
 
-Compose ждёт healthcheck PostgreSQL. Контейнер приложения выполняет последовательно:
+`Profile` связан отношениями один-ко-многим с `Skill`, `Experience` и `Project`. PostgreSQL обеспечивает внешние ключи, каскадное удаление, уникальность `slug` и имени навыка внутри профиля. Индексы поддерживают выборку и сортировку связей. URL проекта необязателен.
 
-1. `prisma migrate deploy` — применяет SQL-миграции;
-2. `prisma db seed` — создаёт или обновляет профиль;
-3. `exec node dist/main.js` — запускает NestJS с прямой доставкой сигналов.
+После успешного healthcheck PostgreSQL контейнер приложения последовательно выполняет:
 
-Seed выполняет атомарный nested `upsert`, заменяя коллекции из `profile-data.json`. Повторный запуск не создаёт дублей. ID дочерних записей могут измениться; они не являются постоянными внешними идентификаторами. Seed намеренно синхронизирует данные при каждом старте; ручные изменения этих коллекций в БД будут перезаписаны. Ошибка миграции/seed прерывает запуск. Именованный volume сохраняет PostgreSQL между перезапусками. `restart: unless-stopped` восстанавливает контейнеры; соединения Prisma управляются lifecycle hooks NestJS.
+1. `prisma migrate deploy` — применение миграций;
+2. `prisma db seed` — создание или обновление данных;
+3. `exec node dist/main.js` — запуск приложения.
 
-Для нескольких реплик миграции и seed следует вынести в единственную release-задачу перед масштабированием. Текущая конфигурация рассчитана на одну реплику API.
+Seed использует атомарный nested `upsert`. Повторный запуск синхронизирует профиль с `profile-data.json` без дублей. Коллекции заменяются целиком: их ID могут измениться, а ручные правки в БД будут перезаписаны. Ошибка миграции или seed прерывает запуск.
 
-## Достоверность профиля
+Конфигурация рассчитана на одну реплику API. При масштабировании миграции и seed необходимо вынести в отдельную release-задачу.
 
-Имя предоставлено владельцем. GitHub `cryptoangelito` подтверждён авторизованным GitHub API. В профиле указаны:
+## Тестирование
 
-- Digital Business Card — исходники этого задания;
-- MONSTERA — публичный репозиторий владельца, README и дерево C#-исходников подтверждают ранний Unity-прототип. Backend и сетевые дуэли там пока не реализованы.
-
-EnzoVPN, Silk Road и Pulse Mail не добавлены: их исходники/ссылки и вклад владельца пока не подтверждены. Коммерческий опыт, компании, сроки и достижения не выдуманы. Навыки обозначены как практика в текущем проекте, без заявления о стаже или экспертном уровне.
-
-## Проверки
-
-Полный набор в изолированной PostgreSQL, без локального Node.js:
+Полная проверка в Docker с отдельной PostgreSQL:
 
 ```bash
-docker compose -p card-tests -fdocker-compose.test.yml up --build --abort-on-container-exit --exit-code-from tests
-docker compose -p card-tests -fdocker-compose.test.yml down -v
+docker compose -p card-tests -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from tests
+docker compose -p card-tests -f docker-compose.test.yml down -v
 ```
 
-Команда выполняет миграции, typecheck, unit-тесты, интеграционные тесты и production build. Тестовая БД отделена от рабочей. E2E требует `ALLOW_TEST_DATABASE=true`; используйте только отдельную тестовую БД.
+Выполняются миграции, typecheck, unit-тесты, интеграционные тесты и production build. GitHub Actions запускает эти проверки при push и pull request.
 
-Проверка уже запущенного production-контейнера:
-
-```bash
-docker compose exec api node scripts/smoke.mjs
-docker compose restart
-docker compose up -d --wait
-docker compose exec api node scripts/smoke.mjs
-docker compose logs --tail 100 api
-```
-
-Отдельные команды при наличии Node.js 22 и доступной PostgreSQL:
+Отдельные команды при установленном Node.js:
 
 ```bash
-npm ci
-npm run db:generate
 npm run typecheck
 npm test
-npm run build
 npm run test:e2e
+npm run build
 npm run test:smoke
 npm audit --omit=dev
 ```
 
-`test:e2e` использует `DATABASE_URL` и меняет данные: только тестовая БД. Smoke допускает другой адрес: `GRAPHQL_URL=https://<ваш-домен>/graphql npm run test:smoke`.
+Интеграционные тесты требуют отдельную мигрированную БД в `DATABASE_URL` и `ALLOW_TEST_DATABASE=true`. Они изменяют данные, поэтому рабочую БД использовать нельзя. Для smoke-теста другого сервера задайте `GRAPHQL_URL`.
 
-Результаты фактической проверки этой поставки записаны в `VERIFICATION.md`. GitHub Actions повторяет проверки через Docker Compose при push и pull request.
+Тесты покрывают повторный seed, вложенные GraphQL-запросы, aliases и fragments, директивы, отсутствие профиля, страницу Apollo, число SQL-запросов и ограничение уникальности навыков.
 
-## Разработка
+## Локальная разработка
 
-Для запуска приложения вне Docker установите Node.js 22 и отдельную PostgreSQL, скопируйте `.env.example` в `.env`, укажите её URL. База из основного Compose не публикует порт: для внешнего Node.js используйте свою локальную БД либо отдельную конфигурацию с привязкой только к `127.0.0.1`.
+Для запуска вне Docker нужны Node.js 22 и доступная PostgreSQL. Скопируйте `.env.example` в `.env` и укажите строку подключения к своей базе.
 
 ```bash
 npm ci
@@ -180,35 +143,20 @@ npm run db:seed
 npm run start:dev
 ```
 
-`start:dev` читает `.env` через Node.js `--env-file`. Для Prisma CLI `.env` подхватывается автоматически. При изменении схемы: `npm run db:migrate -- --name <имя>`, проверка SQL, коммит миграции. В production используется только `migrate deploy`, без `db push`.
+Основной Compose не публикует порт PostgreSQL на хост. Для запуска Node.js вне контейнера используйте отдельную локальную БД или конфигурацию с публикацией порта только на `127.0.0.1`.
 
-## Развёртывание на Render
+`start:dev` загружает `.env` через Node.js `--env-file`; Prisma CLI читает его автоматически. Новая миграция создаётся командой `npm run db:migrate -- --name <имя>`. В production применяется только `migrate deploy`.
 
-В репозитории подготовлен `render.yaml`: Docker web service, PostgreSQL, ссылка на `DATABASE_URL` и healthcheck `/health`. Этот экземпляр опубликован через официальный Render CLI; Blueprint прошёл серверную валидацию и предназначен для воспроизведения инфраструктуры. Перед созданием проверьте доступность free-планов, сроки хранения БД, ограничения и актуальные условия в [документации Render](https://render.com/docs/free). Платный план выбирается только с разрешения владельца.
+## Развёртывание
 
-1. Войти в Render и подключить GitHub-репозиторий.
-2. Создать Blueprint из `render.yaml`, проверить оба плана и итоговую стоимость до подтверждения.
-3. Render передаст PostgreSQL connection string в `DATABASE_URL`; `NODE_ENV=production`. `PORT` выдаёт платформа, NestJS слушает `0.0.0.0`.
-4. Dockerfile автоматически выполнит миграции и seed перед запуском. Хранить секреты только в настройках среды Render, не в Git.
-5. После успешного healthcheck открыть `https://<выданный-домен>/graphql`, проверить Sandbox и запрос профиля; `/health` должен вернуть `{"status":"ok"}`.
-6. Проверить перезапуск сервиса и повторный запрос. Настроить резервные копии и мониторинг согласно выбранному тарифу.
+Приложение размещено на Render с отдельной PostgreSQL 16 и HTTPS. Для воспроизведения инфраструктуры используется [`render.yaml`](render.yaml): Docker web service, PostgreSQL, переменная подключения и healthcheck `/health`.
 
-Тот же Dockerfile пригоден для Railway: отдельный PostgreSQL service, переменная `DATABASE_URL` из него, публичный HTTPS-домен и healthcheck `/health`. Самостоятельно PostgreSQL в эфемерном контейнере web service не размещать.
+1. Подключите репозиторий в Render и создайте Blueprint из `render.yaml`.
+2. Проверьте тарифы и ограничения ресурсов перед созданием.
+3. `DATABASE_URL` передаётся из PostgreSQL, `NODE_ENV` устанавливается в `production`, `PORT` задаётся платформой.
+4. Миграции и seed выполняются автоматически перед запуском сервера.
+5. Проверьте `/health` и запрос `profile` через `/graphql`.
 
-`.env`, логи, `node_modules` и артефакты сборки исключены из Git; `.env*` также исключены из build context Docker. Production-образ работает от пользователя `node` и не содержит devDependencies.
+Production-образ работает от пользователя `node` и не содержит devDependencies. Сервер слушает `0.0.0.0`; сигналы завершения передаются процессу Node.js. Секреты хранятся в переменных окружения платформы. `.env`, логи и артефакты сборки исключены из Git; `.env*` также исключены из Docker build context.
 
-## Поддержка зависимостей
-
-Prisma обновлена до 6.19.3. В `overrides` закреплены исправленные `@graphql-tools/utils` и `deepmerge-ts`, чтобы устранить найденные npm audit уязвимости; совместимость проверяется сборкой и HTTP/БД-тестами. При обновлении NestJS/Prisma пересмотрите необходимость overrides.
-
-Nest Apollo 13 тянет устаревший пакет GraphQL Playground с peer dependency на Apollo 4. npm сообщает предупреждение, но приложение использует Apollo 5 и официальный Sandbox, Playground выключен. Prisma 6 также предупреждает о будущем удалении настройки seed в `package.json` в версии 7. Миграция на новую major-версию — отдельная задача с переходом на новую конфигурацию и повторными проверками.
-
-## Подготовка к демонстрации
-
-Пять практических задач для тренировки:
-
-1. Добавить поле `telegramUrl`: Prisma-миграция, GraphQL-модель, seed и тест ответа.
-2. Добавить фильтр навыков по категории и проверить его через переменные GraphQL.
-3. Добавить сортировку проектов, объяснить порядок и используемый индекс.
-4. Показать число SQL-запросов для scalar-запроса и запроса всех связей, объяснить отсутствие N+1.
-5. Воспроизвести чистый запуск на отдельном Compose project, повторить seed и восстановить приложение после перезапуска БД.
+Текущий экземпляр использует бесплатный тариф: возможна задержка первого запроса после простоя. Срок действия бесплатной БД — **23 ноября 2026, 01:50 по Москве**; до этой даты необходим перенос данных или изменение тарифа.
