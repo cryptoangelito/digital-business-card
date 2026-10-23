@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: card_test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d card_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+  tests:
+    build:
+      context: .
+      target: test
+    environment:
+      DATABASE_URL: postgresql://test:test@db:5432/card_test?schema=public
+      ALLOW_TEST_DATABASE: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["sh", "-ec", "npm run db:deploy && npm run typecheck && npm test && npm run test:e2e && npm run build"]

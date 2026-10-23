@@ -11,6 +11,6 @@ export class ProjectModel {
   @Field(() => String, { nullable: true })
   description!: string | null;
 
-  @Field()
-  url!: string;
+  @Field(() => String, { nullable: true })
+  url!: string | null;
 }

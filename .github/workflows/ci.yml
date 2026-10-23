@@ -1,0 +1,15 @@
+name: Verify application
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit, database and GraphQL tests, typecheck and build
+        run: docker compose -p card-tests -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from tests
+      - name: Logs
+        if: failure()
+        run: docker compose -p card-tests -f docker-compose.test.yml logs
+      - name: Cleanup isolated test database
+        if: always()
+        run: docker compose -p card-tests -f docker-compose.test.yml down -v

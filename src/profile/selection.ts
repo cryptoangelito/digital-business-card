@@ -1,4 +1,4 @@
-import { FieldNode, FragmentDefinitionNode, GraphQLResolveInfo, SelectionSetNode } from 'graphql';
+import { FragmentDefinitionNode, GraphQLResolveInfo, SelectionSetNode, GraphQLIncludeDirective, GraphQLSkipDirective, getDirectiveValues } from 'graphql';
 
 export interface RelationSelection {
   skills: boolean;
@@ -12,7 +12,7 @@ export interface RelationSelection {
  * GraphQL field aliases don't change the original schema field name.
  */
 export function requestedRelations(
-  info: Pick<GraphQLResolveInfo, 'fieldNodes' | 'fragments'>,
+  info: Pick<GraphQLResolveInfo, 'fieldNodes' | 'fragments'> & Partial<Pick<GraphQLResolveInfo, 'variableValues'>>,
 ): RelationSelection {
   const names = new Set<string>();
   const visitedFragments = new Set<string>();
@@ -20,8 +20,10 @@ export function requestedRelations(
   function visit(set: SelectionSetNode | undefined): void {
     if (!set) return;
     for (const selection of set.selections) {
+      if (getDirectiveValues(GraphQLSkipDirective, selection, info.variableValues)?.if === true ||
+          getDirectiveValues(GraphQLIncludeDirective, selection, info.variableValues)?.if === false) continue;
       if (selection.kind === 'Field') {
-        names.add((selection as FieldNode).name.value);
+        names.add(selection.name.value);
       } else if (selection.kind === 'InlineFragment') {
         visit(selection.selectionSet);
       } else if (selection.kind === 'FragmentSpread') {

@@ -1,0 +1,54 @@
+{
+    "name":  "Бахвалов Михаил Алексеевич",
+    "description":  "Начинающий backend-разработчик. Изучаю разработку серверных приложений и API на практике личных и учебных проектов.",
+    "githubUrl":  "https://github.com/cryptoangelito",
+    "linkedinUrl":  null,
+    "websiteUrl":  null,
+    "skills":  [
+                   {
+                       "name":  "TypeScript",
+                       "category":  "Практика в этом проекте"
+                   },
+                   {
+                       "name":  "Node.js",
+                       "category":  "Практика в этом проекте"
+                   },
+                   {
+                       "name":  "NestJS",
+                       "category":  "Практика в этом проекте"
+                   },
+                   {
+                       "name":  "GraphQL",
+                       "category":  "Практика в этом проекте"
+                   },
+                   {
+                       "name":  "Prisma",
+                       "category":  "Практика в этом проекте"
+                   },
+                   {
+                       "name":  "PostgreSQL",
+                       "category":  "Практика в этом проекте"
+                   },
+                   {
+                       "name":  "Docker",
+                       "category":  "Практика в этом проекте"
+                   }
+               ],
+    "experience":  [
+
+                   ],
+    "projects":  [
+                     {
+                         "name":  "Digital Business Card",
+                         "description":  "Учебное задание: API цифровой визитки на NestJS, GraphQL, Prisma и PostgreSQL с запуском через Docker Compose.",
+                         "url":  "https://github.com/cryptoangelito/digital-business-card",
+                         "sortOrder":  0
+                     },
+                     {
+                         "name":  "MONSTERA",
+                         "description":  "Ранний прототип 3D action-RPG на Unity и C#: локальная тренировочная арена, боевые механики и AI-противник. Серверная часть и сетевые дуэли пока не реализованы.",
+                         "url":  "https://github.com/cryptoangelito/Monstera",
+                         "sortOrder":  1
+                     }
+                 ]
+}

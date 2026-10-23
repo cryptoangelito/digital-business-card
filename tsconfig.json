@@ -1,28 +1,29 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "lib": [
-      "ES2022"
-    ],
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "sourceMap": true,
-    "incremental": false,
-    "forceConsistentCasingInFileNames": true
-  },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.spec.ts"
-  ]
+    "compilerOptions":  {
+                            "target":  "ES2022",
+                            "module":  "commonjs",
+                            "moduleResolution":  "node",
+                            "lib":  [
+                                        "ES2022"
+                                    ],
+                            "outDir":  "./dist",
+                            "rootDir":  "./src",
+                            "strict":  true,
+                            "esModuleInterop":  true,
+                            "skipLibCheck":  true,
+                            "experimentalDecorators":  true,
+                            "emitDecoratorMetadata":  true,
+                            "sourceMap":  true,
+                            "incremental":  false,
+                            "forceConsistentCasingInFileNames":  true
+                        },
+    "include":  [
+                    "src/**/*.ts"
+                ],
+    "exclude":  [
+                    "node_modules",
+                    "dist",
+                    "**/*.spec.ts",
+                    "**/*.e2e-spec.ts"
+                ]
 }

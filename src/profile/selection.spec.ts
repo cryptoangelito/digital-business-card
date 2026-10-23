@@ -14,6 +14,14 @@ function infoFrom(query: string) {
 }
 
 describe('requestedRelations', () => {
+  it('honors literal and variable directives on fields and fragments', () => {
+    const info = infoFrom('query($enabled: Boolean!) { profile { skills @skip(if: true) { name } ...P @include(if: $enabled) ... on Profile @include(if: false) { projects { name } } } } fragment P on Profile { experience { company } }');
+    expect(requestedRelations({ ...info, variableValues: { enabled: false } })).toEqual({
+      skills: false, experience: false, projects: false,
+    });
+    expect(requestedRelations({ ...info, variableValues: { enabled: true } }).experience).toBe(true);
+  });
+
   it('does not fetch unused relations', () => {
     expect(requestedRelations(infoFrom('query { profile { name } }'))).toEqual({
       skills: false, experience: false, projects: false,

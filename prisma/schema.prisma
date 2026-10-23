@@ -50,7 +50,7 @@ model Project {
   id          Int     @id @default(autoincrement())
   name        String
   description String?
-  url         String
+  url         String?
   sortOrder   Int     @default(0)
   profileId   Int
   profile     Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
